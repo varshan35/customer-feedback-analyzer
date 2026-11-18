@@ -108,3 +108,19 @@ def milestone_3(train_dataset, val_dataset):
     # Train and return
     trainer.train()
     return model
+
+# --- Milestone 4: Implement an inference function to classify new feedback.
+def milestone_4(model, tokenizer, new_comment):
+    model.eval()
+    inputs = tokenizer(new_comment, return_tensors="pt", truncation=True, padding=True, max_length=128)
+    
+    # Keep input on correct device if model runs on GPU
+    inputs = {k: v.to(model.device) for k, v in inputs.items()}
+    
+    with torch.no_grad():
+        outputs = model(**inputs)
+        logits = outputs.logits
+        probabilities = torch.nn.functional.softmax(logits, dim=-1)[0].cpu().numpy()
+        
+    # Format output distribution for Gradio Label widget
+    return {id2label[i]: float(probabilities[i]) for i in range(len(categories))}
