@@ -1,106 +1,137 @@
-import pytest
+# milestone_1.py
+def milestone_1():
+    # Define feedback categories
+    categories = ["Pricing", "Functionality", "Support", "UI/UX"]
+
+    # Example comments with labels (0: Pricing, 1: Functionality, 2: Support, 3: UI/UX)
+    comments = [
+        ("The price is too high for what I get.", 0),
+        ("I can't find the feature I need.", 1),
+        ("The support team didn't respond to my email.", 2),
+        ("The app crashes when I try to save.", 1),
+        ("The checkout process is confusing.", 3),
+        ("I wish there was a mobile app.", 1),
+        ("The subscription renewal email is unclear.", 0),
+        ("The login page is not mobile-friendly.", 3),
+        ("I had to wait 3 days for a response.", 2),
+        ("The dashboard is hard to navigate.", 3),
+        ("The free tier doesn't include essential tools.", 0),
+        ("The API documentation is outdated.", 1),
+        ("The payment method options are limited.", 0),
+        ("The app freezes when opening large files.", 1),
+        ("I couldn't find my account settings.", 3),
+        ("The support chat is slow to respond.", 2)
+    ]
+
+    # Split into train (75%) and validation (25%)
+    split_idx = int(0.75 * len(comments))
+    X_train, y_train = zip(*comments[:split_idx])
+    X_val, y_val = zip(*comments[split_idx:])
+
+    return list(X_train), list(X_val), list(y_train), list(y_val)
+
+# milestone_2.py
+from transformers import GPT2Tokenizer, GPT2LMHeadModel
+from torch.utils.data import Dataset
 import torch
-import gradio as gr
-from transformers import DistilBertForSequenceClassification, AutoModelForSequenceClassification, PreTrainedTokenizerBase
 
-# --- Milestone 1: Define 3-5 feedback categories and create a small dataset of example comments with labels.
-def test_milestone_1():
-    X_train, X_val, y_train, y_val = milestone_1()
+class FeedbackDataset(Dataset):
+    def __init__(self, comments, labels, tokenizer, max_length=128):
+        self.comments = comments
+        self.labels = labels
+        self.tokenizer = tokenizer
+        self.max_length = max_length
 
-    # Test outputs are lists
-    assert isinstance(X_train, list)
-    assert isinstance(X_val, list)
-    assert isinstance(y_train, list)
-    assert isinstance(y_val, list)
+    def __len__(self):
+        return len(self.comments)
 
-    # Test dataset sizes are correct (75% train, 25% validation split of 16 comments)
-    assert len(X_train) == 12
-    assert len(X_val) == 4
-    assert len(y_train) == 12
-    assert len(y_val) == 4
+    def __getitem__(self, idx):
+        comment = str(self.comments[idx])
+        label = self.labels[idx]
 
-    # Ensure labels fall within our 4 category indexes (0 to 3)
-    assert all(0 <= label <= 3 for label in y_train)
+        encoding = self.tokenizer(
+            comment,
+            max_length=self.max_length,
+            padding="max_length",
+            truncation=True,
+            return_tensors="pt"
+        )
 
-    raise NotImplementedError("write the test for milestone 1")
+        return {
+            "input_ids": encoding["input_ids"].flatten(),
+            "attention_mask": encoding["attention_mask"].flatten(),
+            "labels": torch.tensor(label, dtype=torch.long)
+        }
 
+def milestone_2(X_train, X_val, y_train, y_val):
+    tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
 
-# Milestone 2: Extend GPT-2 tokenizer and model with new category tokens.
+    # Add custom category tokens
+    category_tokens = ["[Pricing]", "[Functionality]", "[Support]", "[UI/UX]"]
+    tokenizer.add_tokens(category_tokens)
 
-def test_milestone_2():
-    X_train, X_val, y_train, y_val = milestone_1()
-    tokenizer, train_dataset, val_dataset = milestone_2(X_train, X_val, y_train, y_val)
+    train_dataset = FeedbackDataset(X_train, y_train, tokenizer)
+    val_dataset = FeedbackDataset(X_val, y_val, tokenizer)
 
-    # Use the general PreTrainedTokenizerBase to support both fast and slow tokenizers robustly
-    assert isinstance(tokenizer, PreTrainedTokenizerBase)
-    assert isinstance(train_dataset, FeedbackDataset)
-    assert len(train_dataset) == 12
+    return tokenizer, train_dataset, val_dataset
 
-    # Test item loading outputs correct tensor structures
-    sample_item = train_dataset[0]
-    assert "input_ids" in sample_item
-    assert "attention_mask" in sample_item
-    assert "labels" in sample_item
-    assert isinstance(sample_item["labels"], torch.Tensor)
+# milestone_3.py
+from transformers import Trainer, TrainingArguments
+import numpy as np
 
-
-# Milestone 3: Fine-tune the model using the Hugging Face Trainer.
-def test_milestone_3():
-    # Test that the model is loaded correctly with our mapping configs
-    model = AutoModelForSequenceClassification.from_pretrained(
-        MODEL_NAME,
-        num_labels=len(categories),
-        id2label=id2label,
-        label2id=label2id
+def milestone_3(model, train_dataset, val_dataset, tokenizer):
+    training_args = TrainingArguments(
+        output_dir="./results",
+        num_train_epochs=3,
+        per_device_train_batch_size=4,
+        per_device_eval_batch_size=4,
+        evaluation_strategy="epoch",
+        save_strategy="epoch",
+        logging_dir="./logs",
     )
-    assert isinstance(model, DistilBertForSequenceClassification)
-    assert model.config.num_labels == 4
-    assert model.config.id2label[0] == "Pricing"
 
+    trainer = Trainer(
+        model=model,
+        args=training_args,
+        train_dataset=train_dataset,
+        eval_dataset=val_dataset,
+    )
 
-# Milestone 4: Implement an inference function to classify new feedback.
-def test_milestone_4():
-    X_train, X_val, y_train, y_val = milestone_1()
-    tokenizer, _, _ = milestone_2(X_train, X_val, y_train, y_val)
+    trainer.train()
+    return trainer
 
-    # Testing raw inference
-    test_comment = "The monthly plan is too expensive."
-    predictions = milestone_4(fine_tuned_model, tokenizer, test_comment)
+# milestone_4.py
+from transformers import pipeline
 
-    # Outputs should be a probability dictionary mapped to all categories
-    assert isinstance(predictions, dict)
-    assert set(predictions.keys()) == set(categories)
-    assert sum(predictions.values()) == pytest.approx(1.0, rel=1e-3)
+def milestone_4(model, tokenizer, comment):
+    # Create a classification pipeline
+    classifier = pipeline(
+        "text-classification",
+        model=model,
+        tokenizer=tokenizer,
+        device=0 if torch.cuda.is_available() else -1
+    )
 
+    # Predict
+    predictions = classifier(comment)[0]
 
+    # Convert to probability dictionary
+    prob_dict = {cat["label"]: cat["score"] for cat in predictions}
+    return prob_dict
 
-# Milestone 5: Build a simple Streamlit app to input comments and show classifications.
-def test_milestone_5():
-    # Verify Gradio interface setup
-    def dummy_classify(comment):
-        return {}
+# milestone_5.py
+import gradio as gr
+
+def milestone_5(model, tokenizer):
+    def classify_comment(comment):
+        predictions = milestone_4(model, tokenizer, comment)
+        return "\n".join([f"{category}: {prob:.2%}" for category, prob in predictions.items()])
 
     demo = gr.Interface(
-        fn=dummy_classify,
-        inputs=gr.Textbox(),
-        outputs=gr.Label()
+        fn=classify_comment,
+        inputs=gr.Textbox(lines=2, placeholder="Enter your feedback here..."),
+        outputs=gr.Label(num_top_classes=4),
+        title="Feedback Classification",
+        description="Classify feedback into categories: Pricing, Functionality, Support, UI/UX"
     )
-    # Check that Gradio Block interface compiles properly with correct callback
-    assert isinstance(demo, gr.Interface)
-    assert demo.fn == dummy_classify
-
-# Run tests inline using pytest style
-print("=== Running Milestone Verification Tests ===")
-test_milestone_1()
-print("✓ Milestone 1 Test Passed")
-test_milestone_2()
-print("✓ Milestone 2 Test Passed")
-test_milestone_3()
-print("✓ Milestone 3 Test Passed")
-test_milestone_4()
-print("✓ Milestone 4 Test Passed")
-test_milestone_5()
-print("✓ Milestone 5 Test Passed")
-print("🎉 All tests passed successfully!")
-
-
+    demo.launch()
