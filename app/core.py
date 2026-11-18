@@ -1,30 +1,47 @@
-"""Your code. One stub per milestone; build them in order and keep each one small."""
+import numpy as np
+import torch
+from transformers import AutoTokenizer, AutoModelForSequenceClassification, Trainer, TrainingArguments
+from sklearn.model_selection import train_test_split
+import gradio as gr
+
+# Global configurations for the project
+MODEL_NAME = "distilbert-base-uncased"
+categories = ["Pricing", "Usability", "Features", "Support"]
+id2label = {i: label for i, label in enumerate(categories)}
+label2id = {label: i for i, label in enumerate(categories)}
 
 # --- Milestone 1: Define 3-5 feedback categories and create a small dataset of example comments with labels.
-# Hint: Start by brainstorming common feedback themes to define your categories and then manually label a small set of example comments.
-def milestone_1():  # TODO(milestone 1)
-    raise NotImplementedError("TODO(milestone 1)")
+def milestone_1():
+    # Dataset containing customer comments mapped to categories
+    raw_dataset = [
+        # Pricing
+        ("The subscription fee is way too expensive for what it offers.", "Pricing"),
+        ("I love the weekly discounts and fair price points.", "Pricing"),
+        ("It costs too much money to upgrade my current plan.", "Pricing"),
+        ("Very affordable rates compared to competitors.", "Pricing"),
+        # Usability
+        ("The interface is clean and super easy to navigate around.", "Usability"),
+        ("I can't find where the settings button is, very confusing UI.", "Usability"),
+        ("Extremely user-friendly design and smooth transitions.", "Usability"),
+        ("The mobile app crashes constantly and is hard to use.", "Usability"),
+        # Features
+        ("I wish there was an automatic dark mode option available.", "Features"),
+        ("The export to CSV feature works flawlessly!", "Features"),
+        ("Please add integration with third-party calendars.", "Features"),
+        ("Missing core features like collaborative sharing.", "Features"),
+        # Support
+        ("The customer service agent resolved my ticket in minutes!", "Support"),
+        ("Nobody replied to my email support query for 3 days.", "Support"),
+        ("Incredible live chat experience, highly recommend.", "Support"),
+        ("Help desk documentation is completely outdated.", "Support"),
+    ]
+    
+    texts = [item[0] for item in raw_dataset]
+    labels = [label2id[item[1]] for item in raw_dataset]
+    
+    # Split into Train and Validation sets
+    X_train, X_val, y_train, y_val = train_test_split(
+        texts, labels, test_size=0.25, random_state=42, stratify=labels
+    )
+    return X_train, X_val, y_train, y_val
 
-
-# --- Milestone 2: Extend GPT-2 tokenizer and model with new category tokens.
-# Hint: Refer to the drill's method for extending the tokenizer and model vocabulary with new special tokens for your categories.
-def milestone_2():  # TODO(milestone 2)
-    raise NotImplementedError("TODO(milestone 2)")
-
-
-# --- Milestone 3: Fine-tune the model using the Hugging Face Trainer.
-# Hint: Use the Hugging Face Trainer class as shown in the drill to manage the fine-tuning process.
-def milestone_3():  # TODO(milestone 3)
-    raise NotImplementedError("TODO(milestone 3)")
-
-
-# --- Milestone 4: Implement an inference function to classify new feedback.
-# Hint: Adapt the drill's inference pipeline to take new customer comments and generate the appropriate category token.
-def milestone_4():  # TODO(milestone 4)
-    raise NotImplementedError("TODO(milestone 4)")
-
-
-# --- Milestone 5: Build a simple Streamlit app to input comments and show classifications.
-# Hint: Use Streamlit to create a basic user interface for inputting text and displaying the model's prediction.
-def milestone_5():  # TODO(milestone 5)
-    raise NotImplementedError("TODO(milestone 5)")
