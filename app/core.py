@@ -72,3 +72,39 @@ def milestone_2(X_train, X_val, y_train, y_val):
     
     return tokenizer, train_dataset, val_dataset
 
+# --- Milestone 3: Fine-tune the classification model using the Hugging Face Trainer.
+def milestone_3(train_dataset, val_dataset):
+    # Initialize classification model
+    model = AutoModelForSequenceClassification.from_pretrained(
+        MODEL_NAME, 
+        num_labels=len(categories),
+        id2label=id2label,
+        label2id=label2id
+    )
+    
+    # Define training arguments
+    # Changed 'evaluation_strategy' to 'eval_strategy' due to HF v4.41.0+ changes.
+    training_args = TrainingArguments(
+        output_dir='./results',
+        num_train_epochs=5,
+        per_device_train_batch_size=4,
+        per_device_eval_batch_size=4,
+        eval_strategy="epoch",
+        logging_steps=5,
+        learning_rate=5e-5,
+        weight_decay=0.01,
+        disable_tqdm=True,
+        report_to="none"
+    )
+    
+    # Initialize Trainer
+    trainer = Trainer(
+        model=model,
+        args=training_args,
+        train_dataset=train_dataset,
+        eval_dataset=val_dataset
+    )
+    
+    # Train and return
+    trainer.train()
+    return model
