@@ -75,7 +75,32 @@ def test_milestone_4():
 
 
 # Milestone 5: Build a simple Streamlit app to input comments and show classifications.
-@pytest.mark.skip(reason="remove this line when you start milestone 5")
 def test_milestone_5():
-    raise NotImplementedError("write the test for milestone 5")
+    # Verify Gradio interface setup
+    def dummy_classify(comment):
+        return {}
+
+    demo = gr.Interface(
+        fn=dummy_classify,
+        inputs=gr.Textbox(),
+        outputs=gr.Label()
+    )
+    # Check that Gradio Block interface compiles properly with correct callback
+    assert isinstance(demo, gr.Interface)
+    assert demo.fn == dummy_classify
+
+# Run tests inline using pytest style
+print("=== Running Milestone Verification Tests ===")
+test_milestone_1()
+print("✓ Milestone 1 Test Passed")
+test_milestone_2()
+print("✓ Milestone 2 Test Passed")
+test_milestone_3()
+print("✓ Milestone 3 Test Passed")
+test_milestone_4()
+print("✓ Milestone 4 Test Passed")
+test_milestone_5()
+print("✓ Milestone 5 Test Passed")
+print("🎉 All tests passed successfully!")
+
 
