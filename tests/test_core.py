@@ -26,9 +26,22 @@ def test_milestone_1():
 
 
 # Milestone 2: Extend GPT-2 tokenizer and model with new category tokens.
-@pytest.mark.skip(reason="remove this line when you start milestone 2")
+
 def test_milestone_2():
-    raise NotImplementedError("write the test for milestone 2")
+    X_train, X_val, y_train, y_val = milestone_1()
+    tokenizer, train_dataset, val_dataset = milestone_2(X_train, X_val, y_train, y_val)
+
+    # Use the general PreTrainedTokenizerBase to support both fast and slow tokenizers robustly
+    assert isinstance(tokenizer, PreTrainedTokenizerBase)
+    assert isinstance(train_dataset, FeedbackDataset)
+    assert len(train_dataset) == 12
+
+    # Test item loading outputs correct tensor structures
+    sample_item = train_dataset[0]
+    assert "input_ids" in sample_item
+    assert "attention_mask" in sample_item
+    assert "labels" in sample_item
+    assert isinstance(sample_item["labels"], torch.Tensor)
 
 
 # Milestone 3: Fine-tune the model using the Hugging Face Trainer.
