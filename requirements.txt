@@ -1,0 +1,6 @@
+streamlit
+httpx
+pytest
+datasets
+transformers
+torch
