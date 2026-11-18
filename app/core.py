@@ -124,3 +124,34 @@ def milestone_4(model, tokenizer, new_comment):
         
     # Format output distribution for Gradio Label widget
     return {id2label[i]: float(probabilities[i]) for i in range(len(categories))}
+
+# --- Milestone 5: Build a simple App to input comments and show classifications.
+def milestone_5(model, tokenizer):
+    def classify_api(comment):
+        if not comment.strip():
+            return {}
+        return milestone_4(model, tokenizer, comment)
+
+    # Create interactive Gradio dashboard
+    demo = gr.Interface(
+        fn=classify_api,
+        inputs=gr.Textbox(lines=3, placeholder="Enter custom feedback here... (e.g., 'Love the design, but too pricey!')", label="Customer Feedback Input"),
+        outputs=gr.Label(num_top_classes=4, label="AI Categorization Results"),
+        title="⚖️ Day 4 Customer Feedback Classifier",
+        description="An upgraded NLP classifier trained using DistilBERT & Hugging Face Transformer parameters."
+    )
+    demo.launch(share=True)
+
+# Executing all pipeline steps sequentially
+print("Starting Milestone 1: Building dataset...")
+X_train, X_val, y_train, y_val = milestone_1()
+
+print("Starting Milestone 2: Setting up tokenization...")
+tokenizer, train_dataset, val_dataset = milestone_2(X_train, X_val, y_train, y_val)
+
+print("Starting Milestone 3: Initializing and fine-tuning the transformer...")
+fine_tuned_model = milestone_3(train_dataset, val_dataset)
+
+print("Starting Milestone 5: Launching interactive UI...")
+milestone_5(fine_tuned_model, tokenizer)
+

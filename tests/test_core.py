@@ -1,12 +1,27 @@
-"""Your tests. Each milestone in README.md gets one here: write the test first, then make it pass.
-
-They start skipped. Remove the `skip` line as you work on each milestone.
-"""
 import pytest
+import torch
+import gradio as gr
+from transformers import DistilBertForSequenceClassification, AutoModelForSequenceClassification, PreTrainedTokenizerBase
 
-# Milestone 1: Define 3-5 feedback categories and create a small dataset of example comments with labels.
-@pytest.mark.skip(reason="remove this line when you start milestone 1")
+# --- Milestone 1: Define 3-5 feedback categories and create a small dataset of example comments with labels.
 def test_milestone_1():
+    X_train, X_val, y_train, y_val = milestone_1()
+
+    # Test outputs are lists
+    assert isinstance(X_train, list)
+    assert isinstance(X_val, list)
+    assert isinstance(y_train, list)
+    assert isinstance(y_val, list)
+
+    # Test dataset sizes are correct (75% train, 25% validation split of 16 comments)
+    assert len(X_train) == 12
+    assert len(X_val) == 4
+    assert len(y_train) == 12
+    assert len(y_val) == 4
+
+    # Ensure labels fall within our 4 category indexes (0 to 3)
+    assert all(0 <= label <= 3 for label in y_train)
+
     raise NotImplementedError("write the test for milestone 1")
 
 
