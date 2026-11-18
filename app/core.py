@@ -45,3 +45,30 @@ def milestone_1():
     )
     return X_train, X_val, y_train, y_val
 
+# --- Milestone 2: Extend / Load Tokenizer and encode dataset.
+class FeedbackDataset(torch.utils.data.Dataset):
+    def __init__(self, encodings, labels):
+        self.encodings = encodings
+        self.labels = labels
+
+    def __getitem__(self, idx):
+        item = {key: torch.tensor(val[idx]) for key, val in self.encodings.items()}
+        item['labels'] = torch.tensor(self.labels[idx], dtype=torch.long)
+        return item
+
+    def __len__(self):
+        return len(self.labels)
+
+def milestone_2(X_train, X_val, y_train, y_val):
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+    
+    # Tokenize text data
+    train_encodings = tokenizer(X_train, truncation=True, padding=True, max_length=128)
+    val_encodings = tokenizer(X_val, truncation=True, padding=True, max_length=128)
+    
+    # Wrap into PyTorch datasets
+    train_dataset = FeedbackDataset(train_encodings, y_train)
+    val_dataset = FeedbackDataset(val_encodings, y_val)
+    
+    return tokenizer, train_dataset, val_dataset
+
