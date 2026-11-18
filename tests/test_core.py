@@ -45,9 +45,17 @@ def test_milestone_2():
 
 
 # Milestone 3: Fine-tune the model using the Hugging Face Trainer.
-@pytest.mark.skip(reason="remove this line when you start milestone 3")
 def test_milestone_3():
-    raise NotImplementedError("write the test for milestone 3")
+    # Test that the model is loaded correctly with our mapping configs
+    model = AutoModelForSequenceClassification.from_pretrained(
+        MODEL_NAME,
+        num_labels=len(categories),
+        id2label=id2label,
+        label2id=label2id
+    )
+    assert isinstance(model, DistilBertForSequenceClassification)
+    assert model.config.num_labels == 4
+    assert model.config.id2label[0] == "Pricing"
 
 
 # Milestone 4: Implement an inference function to classify new feedback.
