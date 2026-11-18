@@ -59,9 +59,19 @@ def test_milestone_3():
 
 
 # Milestone 4: Implement an inference function to classify new feedback.
-@pytest.mark.skip(reason="remove this line when you start milestone 4")
 def test_milestone_4():
-    raise NotImplementedError("write the test for milestone 4")
+    X_train, X_val, y_train, y_val = milestone_1()
+    tokenizer, _, _ = milestone_2(X_train, X_val, y_train, y_val)
+
+    # Testing raw inference
+    test_comment = "The monthly plan is too expensive."
+    predictions = milestone_4(fine_tuned_model, tokenizer, test_comment)
+
+    # Outputs should be a probability dictionary mapped to all categories
+    assert isinstance(predictions, dict)
+    assert set(predictions.keys()) == set(categories)
+    assert sum(predictions.values()) == pytest.approx(1.0, rel=1e-3)
+
 
 
 # Milestone 5: Build a simple Streamlit app to input comments and show classifications.
